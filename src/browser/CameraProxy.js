@@ -25,24 +25,57 @@ function takePicture(success, error, opts) {
     if (opts && opts[2] === 1) {
         capture(success, error, opts);
     } else {
-        var input = document.createElement('input');
-        input.style.position = 'relative';
+      var input = document.createElement('input');
+		  var canvas = document.createElement('canvas');
+
+      var targetWidth = opts[3];
+      var targetHeight = opts[4];
+
+		  input.style.position = 'relative';
         input.style.zIndex = HIGHEST_POSSIBLE_Z_INDEX;
         input.className = 'cordova-camera-select';
         input.type = 'file';
         input.name = 'files[]';
 
         input.onchange = function(inputEvent) {
+            var img = document.createElement('img');
             var reader = new FileReader();
             reader.onload = function(readerEvent) {
                 input.parentNode.removeChild(input);
 
-                var imageData = readerEvent.target.result;
+                img.src = readerEvent.target.result;
 
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+
+                var MAX_WIDTH = targetWidth;
+                var MAX_HEIGHT = targetHeight;
+                var width = img.width;
+                var height = img.height;
+
+                if (width > height) {
+                  if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                  }
+                } else {
+                  if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                  }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                var imageData = canvas.toDataURL("image/jpeg");
                 return success(imageData.substr(imageData.indexOf(',') + 1));
             };
 
             reader.readAsDataURL(inputEvent.target.files[0]);
+
+
         };
 
         document.body.appendChild(input);
